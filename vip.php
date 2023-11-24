@@ -20,8 +20,8 @@ define('MAC_COMM', __DIR__.'/application/common/common/');
 define('MAC_HOME_COMM', __DIR__.'/application/index/common/');
 define('MAC_ADMIN_COMM', __DIR__.'/application/admin/common/');
 define('MAC_START_TIME', microtime(true) );
-//define('BIND_MODULE','admin');
-define('ENTRANCE', 'admin');
+//define('BIND_MODULE','vip');
+define('ENTRANCE', 'vip');
 $in_file = rtrim($_SERVER['SCRIPT_NAME'],'/');
 if(substr($in_file,strlen($in_file)-4)!=='.php'){
     $in_file = substr($in_file,0,strpos($in_file,'.php')) .'.php';
