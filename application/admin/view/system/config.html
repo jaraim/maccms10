@@ -110,6 +110,15 @@
                 </div>
 
                 <div class="layui-form-item">
+                    <label class="layui-form-label">{:lang('admin/system/config/site_polyfill')}：</label>
+                    <div class="layui-input-inline w300">
+                        <input type="radio" name="site[site_polyfill]" value="0" title="{:lang('close')}" {if condition="$config['site']['site_polyfill'] eq 0"}checked {/if}>
+                        <input type="radio" name="site[site_polyfill]" value="1" title="{:lang('open')}" {if condition="!isset($config['site']['site_polyfill']) or $config['site']['site_polyfill'] eq 1"}checked {/if}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">{:lang('admin/system/config/site_polyfill_tip')}</div>
+                </div>
+                
+                <div class="layui-form-item">
                     <label class="layui-form-label">{:lang('admin/system/config/mob_status')}：</label>
                     <div class="layui-input-inline w300">
                         <input type="radio" name="site[mob_status]" value="0" title="{:lang('close')}" {if condition="$config['site']['mob_status'] neq 1"}checked {/if}>
