@@ -997,6 +997,9 @@ class Collect extends Base {
 
                     }
                 }
+                if(Cache::has('vod_repeat_table_created_time')){
+                    Cache::rm('vod_repeat_table_created_time');
+                }
             }
             if($show==1) {
                 mac_echo( ($k + 1) .'、'. $v['vod_name'] . " <font color='{$color}'>" .$des .'</font>'. $msg.'' );

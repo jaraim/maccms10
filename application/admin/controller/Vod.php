@@ -1,5 +1,6 @@
 <?php
 namespace app\admin\controller;
+use think\Cache;
 use think\Db;
 
 class Vod extends Base
@@ -99,10 +100,18 @@ class Vod extends Base
         }
 
         if(!empty($param['repeat'])){
+            if(!empty($param['cache'])){
+                model('Vod')->createRepeatCache();
+                return $this->success(lang('update_ok'));
+            }
+
             if($param['page'] ==1){
-                Db::execute('DROP TABLE IF EXISTS '.config('database.prefix').'tmpvod');
-                Db::execute('CREATE TABLE `'.config('database.prefix').'tmpvod` (`id1` int unsigned DEFAULT NULL, `name1` varchar(1024) NOT NULL DEFAULT \'\') ENGINE=MyISAM');
-                Db::execute('INSERT INTO `'.config('database.prefix').'tmpvod` (SELECT min(vod_id)as id1,vod_name as name1 FROM '.config('database.prefix').'vod GROUP BY name1 HAVING COUNT(name1)>1)');
+                //使用缓存查看是否创建过缓存表
+                $cacheResult = Cache::get('vod_repeat_table_created_time',0);
+                //缓存时间超过7天和没有创建过缓存都会重建缓存
+                if( $cacheResult == 0 || time() - $cacheResult > 604800){
+                    model('Vod')->createRepeatCache();
+                }
             }
             $order='vod_name asc';
             $res = model('Vod')->listRepeatData($where,$order,$param['page'],$param['limit']);
@@ -127,7 +136,8 @@ class Vod extends Base
         $param['page'] = '{page}';
         $param['limit'] = '{limit}';
         $this->assign('param',$param);
-
+        $queryString = '?' . http_build_query($param);
+        $this->assign('query_string',$queryString);
         //分类
         $type_tree = model('Type')->getCache('type_tree');
         $this->assign('type_tree',$type_tree);
@@ -449,18 +459,37 @@ class Vod extends Base
             if($res['code']>1){
                 return $this->error($res['msg']);
             }
+            Cache::rm('vod_repeat_table_created_time');
             return $this->success($res['msg']);
         }
         elseif(!empty($param['repeat'])){
-            $st = ' not in ';
-            if($param['retain']=='max'){
-                $st=' in ';
+            if($param['retain']=='max') {
+                // 保留最大ID - 先用子查询找出要保留的ID
+                $sql = 'DELETE FROM '.config('database.prefix').'vod WHERE vod_id IN (
+                SELECT * FROM (
+                    SELECT v1.vod_id
+                    FROM '.config('database.prefix').'vod v1
+                    INNER JOIN '.config('database.prefix').'vod v2 
+                    ON v1.vod_name = v2.vod_name AND v1.vod_id < v2.vod_id
+                ) tmp
+            )';
+            } else {
+                // 保留最小ID - 先用子查询找出要保留的ID
+                $sql = 'DELETE FROM '.config('database.prefix').'vod WHERE vod_id IN (
+                SELECT * FROM (
+                    SELECT v1.vod_id
+                    FROM '.config('database.prefix').'vod v1
+                    INNER JOIN '.config('database.prefix').'vod v2 
+                    ON v1.vod_name = v2.vod_name AND v1.vod_id > v2.vod_id
+                ) tmp
+            )';
             }
-            $sql = 'delete from '.config('database.prefix').'vod where vod_name in(select name1 from '.config('database.prefix').'tmpvod) and vod_id '.$st.'(select id1 from '.config('database.prefix').'tmpvod)';
+
             $res = model('Vod')->execute($sql);
             if($res===false){
                 return $this->success(lang('del_err'));
             }
+            Cache::rm('vod_repeat_table_created_time');
             return $this->success(lang('del_ok'));
         }
         return $this->error(lang('param_err'));

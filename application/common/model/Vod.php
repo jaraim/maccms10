@@ -80,12 +80,12 @@ class Vod extends Base {
         $limit_str = ($limit * ($page-1) + $start) .",".$limit;
 
         $total = $this
-            ->join('tmpvod t','t.name1 = vod_name')
+            ->join('vod_repeat t','t.name1 = vod_name')
             ->where($where)
             ->count();
 
         $list = Db::name('Vod')
-            ->join('tmpvod t','t.name1 = vod_name')
+            ->join('vod_repeat t','t.name1 = vod_name')
             ->field($field)
             ->where($where)
             ->order($order)
@@ -111,7 +111,7 @@ class Vod extends Base {
         return ['code'=>1,'msg'=>lang('data_list'),'page'=>$page,'pagecount'=>ceil($total/$limit),'limit'=>$limit,'total'=>$total,'list'=>$list];
     }
 
-    public function listCacheData($lp)
+    public function listCacheData($lp,$field='*')
     {
         if(!is_array($lp)){
             $lp = json_decode($lp,true);
@@ -574,7 +574,7 @@ class Vod extends Base {
             $cachetime = $GLOBALS['config']['app']['cache_time'];
         }
         if($GLOBALS['config']['app']['cache_core']==0 || empty($res)) {
-            $res = $this->listData($where, $order, $page, $num, $start,'*',1, $totalshow);
+            $res = $this->listData($where, $order, $page, $num, $start,$field,1, $totalshow);
             if($GLOBALS['config']['app']['cache_core']==1) {
                 Cache::set($cach_name, $res, $cachetime);
             }
@@ -730,9 +730,18 @@ class Vod extends Base {
 
         $data = VodValidate::formatDataBeforeDb($data);
         if(!empty($data['vod_id'])){
+
             $where=[];
             $where['vod_id'] = ['eq',$data['vod_id']];
             $res = $this->allowField(true)->where($where)->update($data);
+            //编辑 先获取到之前的name
+            $old_name = $this->where('vod_id',$data['vod_id'])->value('vod_name');
+            if($old_name!=$data['vod_name']){
+                $this->cacheRepeatWithName($old_name);
+                $this->cacheRepeatWithName($data['vod_name']);
+            }else{
+                $this->cacheRepeatWithName($data['vod_name']);
+            }
         }
         else{
             $data['vod_plot'] = 0;
@@ -744,10 +753,13 @@ class Vod extends Base {
             if ($res > 0 && model('VodSearch')->isFrontendEnabled()) {
                 model('VodSearch')->checkAndUpdateTopResults(['vod_id' => $res] + $data);
             }
+            //新增 针对当前name 判断是否重复
+            $this->cacheRepeatWithName($data['vod_name']);
         }
         if(false === $res){
             return ['code'=>1002,'msg'=>lang('save_err').'：'.$this->getError() ];
         }
+
         return ['code'=>1,'msg'=>lang('save_ok')];
     }
 
@@ -862,6 +874,37 @@ class Vod extends Base {
             $ids = array_unique($ids);
         }
         return ['code'=>1,'msg'=>lang('obtain_ok'),'data'=> join(',',$ids) ];
+    }
+
+    public function cacheRepeatWithName($name)
+    {
+        try{
+            Db::execute('delete from `' . config('database.prefix') . 'vod_repeat` where name1 =?', [$name]);
+            Db::execute('INSERT INTO `' . config('database.prefix') . 'vod_repeat` (SELECT min(vod_id)as id1,vod_name as name1 FROM ' . config('database.prefix') . 'vod WHERE vod_name = ? GROUP BY name1 HAVING COUNT(name1)>1)', [$name]);
+        }catch (\Exception $e){
+            Db::execute('DROP TABLE IF EXISTS ' . config('database.prefix') . 'vod_repeat');
+            Db::execute('CREATE TABLE `' . config('database.prefix') . 'vod_repeat` (`id1` int unsigned DEFAULT NULL, `name1` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT \'\') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+            Db::execute('ALTER TABLE `' . config('database.prefix') . 'vod_repeat` ADD INDEX `name1` (`name1`(100))');
+        }
+        Db::execute('INSERT INTO `' . config('database.prefix') . 'vod_repeat` (SELECT min(vod_id)as id1,vod_name as name1 FROM ' .
+            config('database.prefix') . 'vod GROUP BY name1 HAVING COUNT(name1)>1)');
+        Cache::set('vod_repeat_table_created_time',time());
+    }
+    public function  createRepeatCache()
+    {
+        $prefix = config('database.prefix');
+        $tableName = $prefix . 'vod_repeat';
+        try{
+            Db::execute("TRUNCATE TABLE `{$tableName}`");
+        }catch (\Exception $e){
+            //创建表
+            Db::execute('DROP TABLE IF EXISTS ' . config('database.prefix') . 'vod_repeat');
+            Db::execute('CREATE TABLE `' . config('database.prefix') . 'vod_repeat` (`id1` int unsigned DEFAULT NULL, `name1` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT \'\') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+            Db::execute('ALTER TABLE `' . config('database.prefix') . 'vod_repeat` ADD INDEX `name1` (`name1`(100))');
+        }
+        Db::execute('INSERT INTO `' . config('database.prefix') . 'vod_repeat` (SELECT min(vod_id)as id1,vod_name as name1 FROM ' .
+            config('database.prefix') . 'vod GROUP BY name1 HAVING COUNT(name1)>1)');
+        Cache::set('vod_repeat_table_created_time',time());
     }
 
 }

@@ -1218,7 +1218,7 @@ function mac_get_order_status_text($data)
 
 function mac_get_user_portrait($user_id)
 {
-    $res = MAC_PATH . 'static/images/touxiang.png';
+    $res = MAC_PATH . 'static_new/images/touxiang.png';
     if(!empty($user_id)){
         $res2 = 'upload/user/'.($user_id % 10 ). '/'.$user_id.'.jpg';
         if(file_exists(ROOT_PATH . $res2)){
@@ -1733,12 +1733,12 @@ function mac_alphaID($in, $to_num=false, $pad_up=false, $passKey='')
             }
         }
         $out = "";
-        for ($t = floor(log10($in) / log10($base)); $t >= 0; $t--) {
-            $a = floor($in / bcpow($base, $t));
-            $out = $out . substr($key, $a, 1);
-            $in = $in - ($a * bcpow($base, $t));
+        // 修复部分：改用逐位计算代替浮点运算
+        while ($in > 0) {
+            $remainder = $in % $base;
+            $out = substr($key, $remainder, 1) . $out;
+            $in = ($in - $remainder) / $base;
         }
-        $out = strrev($out);
     }
     return $out;
 }

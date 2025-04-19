@@ -39,17 +39,31 @@ class View
         $base    = $request->root();
         $root    = strpos($base, '.') ? ltrim(dirname($base), DS) : $base;
         if ('' != $root) {
-            $root = '/' . ltrim($root, '/');
+            $root = '/' . ltrim($root, '/'); 
+        }
+        // 如果 new_version 为 1 或者 new_version 不存在或者为null，则使用新版模板
+        if($GLOBALS['config']['site']['new_version'] == 1 || !isset($GLOBALS['config']['site']['new_version']) || (empty($GLOBALS['config']['site']['new_version']) && $GLOBALS['config']['site']['new_version'] != 0)){
+            $root . $static_path = '/static_new/';
+        }else{
+            $root . $static_path = '/static/';
         }
         $baseReplace = [
             '__ROOT__'   => $root,
+            'MAC_BASE_PATH'   => $root,
             '__URL__'    => $base . '/' . $request->module() . '/' . Loader::parseName($request->controller()),
-            '__STATIC__' => $root . '/static',
-            '__CSS__'    => $root . '/static/css',
-            '__JS__'     => $root . '/static/js',
+            '__STATIC__' => $root . $static_path,
+            '__CSS__'    => $root . $static_path . '/css',
+            '__JS__'     => $root . $static_path .'/js',
         ];
+        $this->assign('MAC_BASE_PATH', $this->mac_base_path());
         $this->replace = array_merge($baseReplace, (array) $replace);
     }
+
+    public function mac_base_path()
+    {
+        return $GLOBALS['rootpath'];
+    }
+
 
     /**
      * 初始化视图

@@ -153,6 +153,7 @@ return [
     'portrait'=>'头像',
     'tpl_dir'=>'模板目录',
     'ads_dir'=>'广告目录',
+    'map_dir'=>'地图目录',
     'reply'=>'回复',
     'reply_yes'=>'已回复',
     'reply_not'=>'未回复',
@@ -263,6 +264,7 @@ return [
     'up'=>'顶',
     'hate'=>'踩',
     'rnd_make'=>'随机生成',
+    'reset_zero'=>'归零',
     'score'=>'平均分',
     'score_all'=>'总评分',
     'score_num'=>'总评次',
@@ -370,10 +372,13 @@ return [
     'pass'=>'密码',
     'clear_confirm'=>'确认清空数据吗？',
     'audit_confirm'=>'确认审核数据吗？',
+    'blacklist_keywords' => '黑名单关键字',
+    'blacklist_ip' => '黑名单IP',
 
     'clear'=>'清空',
     'del_auto_keep_min'=>'一键删重[保留小ID]',
     'del_auto_keep_max'=>'一键删重[保留大ID]',
+    'update_repeat_cache'=>'更新缓存',
     'num_id'=>'数字ID',
     'encode_id'=>'加密ID',
     'vod_id'=>'视频ID',
@@ -719,6 +724,10 @@ https://www.baidu.com/123.jpg
     'index/mid_err'=>'模型mid错误',
     'index/thanks_msg_audit'=>'谢谢，我们会尽快审核你的留言！',
     'index/thanks_msg'=>'感谢你的留言！',
+    'index/blacklist_keyword'=>'您的评论有敏感词请修改后再提交！',
+    'index/blacklist_ip'=>'禁止评论!',
+    'index/blacklist_placeholder'=>'请输入黑名单关键字,每个关键字占一行',
+    'index/blacklist_placeholder_ip'=>'请输入黑名单IP,每个IP占一行,非IP格式提交后将会被过滤',
     'index/payment_status'=>'该支付选项未开启！',
     'index/payment_not'=>'未找到支付选项！',
     'index/payment_ok'=>'支付完成！',
@@ -756,7 +765,7 @@ https://www.baidu.com/123.jpg
     'admin/public/jump/title'=>'跳转提示',
 
     'admin/index/login/title'=>'后台管理中心 - Copyright by 苹果CMS内容管理系统',
-    'admin/index/login/tip_welcome'=>'欢迎使用',
+    'admin/index/login/tip_welcome'=>'欢迎使用MacCMS建站',
     'admin/index/login/tip_sys'=>'系统管理',
     'admin/index/login/filed_no'=>'账号',
     'admin/index/login/filed_pass'=>'密码',
@@ -775,7 +784,7 @@ https://www.baidu.com/123.jpg
     'admin/index/index/menu_logout' =>'退出登陆',
     'admin/index/index/menu_cache' =>'缓存',
     'admin/index/index/menu_cache_clear' =>'清理缓存',
-    'admin/index/index/menu_welcome' =>'欢迎页面',
+    
     'admin/index/index/menu_opt' =>'操作',
     'admin/index/index/menu_close_all' =>'关闭全部',
     'admin/index/index/menu_close_other' =>'关闭其他',
@@ -789,7 +798,8 @@ https://www.baidu.com/123.jpg
         3，支持系统模块，例如： 文章管理,art/data<br>
         4，支持行分隔符，例如： 分隔符,###',
 
-
+    'admin/index/welcome/disk_detail_tips' =>'移动到图表上查看磁碟详细资讯',
+    'admin/index/welcome/mem_detail' =>'内存占用',
     'admin/index/welcome/filed_os' =>'运行环境',
     'admin/index/welcome/filed_host' =>'服务器IP/端口',
     'admin/index/welcome/filed_php_ver' =>'PHP版本',
@@ -805,7 +815,7 @@ https://www.baidu.com/123.jpg
     'admin/index/welcome/filed_last_login_ip' =>'上次登录IP',
     'admin/index/welcome/filed_last_login_time' =>'上次登录时间',
     'admin/index/welcome/tip_warn' =>'请不要修改系统文件，以免升级出现故障！本程序不内置任何数据，添加任何数据均是个人行为！请在遵守法律的前提下使用程序，否则后果自负！',
-
+    
     'admin/index/quick_tit'=>'↓↓↓自定义菜单区域↓↓↓',
     'admin/index/title'=>'后台管理中心',
     'admin/index/welcome/title'=>'欢迎页面',
@@ -817,6 +827,20 @@ https://www.baidu.com/123.jpg
     'admin/index/pass_err'=>'密码错误',
     'admin/index/unlock_ok'=>'解锁成功',
     'admin/index/title'=>'后台管理中心',
+    'admin/index/welcome/today_visit_count'  => '本日用户访问',
+    'admin/index/welcome/today_money_get'  => '本日入金总额',
+    'admin/index/welcome/system_status'  => '系统资讯',
+    'admin/index/welcome/disk_space_usage'  => '磁碟空间占比',
+    'admin/index/welcome/seven_day_visit_data'  => '近七日用户访问量',
+    'admin/index/welcome/seven_day_reg_data'  => '近七日用户注册量',
+    'admin/index/welcome/reg_users_count'  => '注册用户数',
+    'admin/index/welcome/active_reg_users_count'  => '已审核用户数',
+    'admin/index/index/new_version' =>'新版本', 
+    'admin/index/index/menu_notifications' =>'通知',
+    'admin/index/index/old_version' =>'旧版本',
+    'admin/index/index/menu_welcome' =>'欢迎页面',
+    'admin/index/get_system_status/title'=>'系统资讯',
+    'menu/get_system_status'=>'系统资讯',
 
 
 
@@ -955,6 +979,7 @@ https://www.baidu.com/123.jpg
     'admin/system/configapi/actor'=>'演员API设置',
     'admin/system/configapi/role'=>'角色API设置',
     'admin/system/configapi/website'=>'网址API设置',
+    'admin/system/configapi/publicapi'=>'公共API设置',
     'admin/system/configapi/vod_tip'=>'提示信息：<br>
                             1,视频列表地址/api.php/provide/vod/?ac=list<br>
                             2,视频详情地址/api.php/provide/vod/?ac=detail',
@@ -992,6 +1017,17 @@ https://www.baidu.com/123.jpg
     'admin/system/configapi/website_tip'=>'提示信息：<br>
                             1,网址列表地址/api.php/provide/website/?ac=list<br>
                             2,网址详情地址/api.php/provide/website/?ac=detail',
+    'admin/system/configapi/publicapi_tip'=>'提示信息：<br>
+                            1,演员列表地址/api.php/actor/get_list/<br>
+                            2,文章列表地址/api.php/art/get_list/<br>
+                            3,评论列表地址/api.php/comment/get_list/<br>
+                            4,留言列表地址/api.php/gbook/get_list/<br>
+                            5,链接列表地址/api.php/link/get_list/<br>
+                            6,主题列表地址/api.php/topic/get_list/<br>
+                            7,分类列表地址/api.php/type/get_list/<br>
+                            8,用户列表地址/api.php/user/get_list/<br>
+                            9,视频列表地址/api.php/vod/get_list/<br>
+                            10,网址列表地址/api.php/website/get_list',
 
 
 
@@ -1332,6 +1368,8 @@ https://www.baidu.com/123.jpg
     'admin/system/configupload/img_api_tip'=>'处理防盗链图片的接口地址',
     'admin/system/configupload/keep_local'=>'保留本地',
     'admin/system/configupload/keep_local_tip'=>'如果选择上传到远程，上传完成后，本地也将保留一份',
+    'admin/system/configupload/s3_info'=>'使用s3存储请确保已经下载好aws.phar文件',
+    'admin/system/configupload/s3_save_path'=>'下载后请保存为',
 
     'admin/system/configsms/title'=>'短信发送配置',
     'admin/system/configsms/tip'=>'提示信息：<br>
@@ -1439,7 +1477,8 @@ https://www.baidu.com/123.jpg
     'admin/domain/help_tip'=>'提示信息：<br>
                         1，此功能支持非静态模式下同1个数据库不同域名显示不同的模板和网站配置信息<br>
                         2，不限制域名网站数量<br>
-                        3，导入文本格式是：域名$网站名称$关键字$描述$模板$模板目录$广告目录。每行一个网站。清空原有数据。<br>',
+                        3，导入文本格式是：域名$网站名称$关键字$描述$模板$模板目录$广告目录$地圖目錄。每行一个网站。清空原有数据。<br>
+                        4. 如設置了地圖目錄需站長自行配置nginx重定向，URL為：rss/$地圖目錄/index.xml。<br>',
 
     'admin/domain/title'=>'站群管理',
 
@@ -1868,6 +1907,7 @@ https://www.baidu.com/123.jpg
     'admin/update/step3_a'=>'在线升级进行中第三步【更新缓存】,请稍后......',
     'admin/update/update_cache'=>'更新数据缓存文件...',
     'admin/update/upgrade_complete'=>'恭喜您，系统升级完毕...',
+    'admin/update/not_delete'=>'数据库升级脚本未删除，请手动删除',
 
     'admin/upload/test_write_ok'=>'测试写入成功',
     'admin/upload/test_write_ok'=>'写入失败，请检查临时文件目录权限',
@@ -1940,7 +1980,8 @@ https://www.baidu.com/123.jpg
 
 
     'install/title'=>'苹果CMS-V10系统安装',
-    'install/header'=>'感谢您选择苹果CMS-V10系搭建网站',
+    'install/header'=>'感谢您选择!',
+    'install/header1'=>'MacCMS系统建站',
     'install/lang'=>'语言包[langs]',
     'install/select_lang'=>'请选择语言包[select lang]',
     'install/lang_tip'=>'请根据自己身需要选择后台语言包',
@@ -1973,6 +2014,7 @@ https://www.baidu.com/123.jpg
     'install/result'=>'结果',
     'install/back_step'=>'返回上一步',
     'install/next_step'=>'进行下一步',
+    'install/next_step_tips'=>'如点击下一步超时请重启php-fpm后再试',
     'install/question'=>'常见问题解决办法',
     'install/database_config'=>'数据库配置',
 
@@ -2029,7 +2071,7 @@ https://www.baidu.com/123.jpg
     'install/read_and_write'=>'读写',
     'install/not_writable'=>'不可写',
     'install/support'=>'支持',
-    'install/not_support'=>'支持',
+    'install/not_support'=>'不支持',
     'install/class'=>'类',
     'install/model'=>'模块',
     'install/function'=>'函数',
