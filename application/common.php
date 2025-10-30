@@ -923,7 +923,17 @@ function mac_rep_pse_rnd($psearr,$txt,$id=0)
 
 function mac_txt_explain($txt, $decode = false)
 {
-    $txtarr = explode('#',$txt);
+    // 先将HTML实体中的#临时替换为特殊占位符
+    $placeholder = '___HTML_ENTITY_HASH___';
+    $txt = preg_replace('/&#(\d+);/', $placeholder . '$1;', $txt);
+    $txt = preg_replace('/&#x([0-9a-fA-F]+);/', $placeholder . 'x$1;', $txt);
+    // 安全地按#分割
+    $txtarr = explode('#', $txt);
+    // 还原HTML实体中的#
+    foreach($txtarr as &$item) {
+        $item = str_replace($placeholder, '&#', $item);
+    }
+    unset($item);
     $data=[];
     foreach($txtarr as $v){
         if (stripos($v, '=') === false) {
@@ -1080,6 +1090,7 @@ function mac_get_mid_code($data)
         9  => 'role',
         10 => 'plot',
         11 => 'website',
+        12 => 'manga',
     ];
     return $arr[$data];
 }
@@ -1097,6 +1108,7 @@ function mac_get_mid_text($data)
         9  => lang('role'),
         10 => lang('plot'),
         11 => lang('website'),
+        12 => lang('manga'),
     ];
     return $arr[$data];
 }
@@ -1115,6 +1127,7 @@ function mac_get_mid($controller)
         'role'    => 9,
         'plot'    => 10,
         'website' => 11,
+        'manga'   => 12,
     ];
     return $arr[$controller];
 }
@@ -1131,6 +1144,7 @@ function mac_get_aid($controller,$action='')
     $arr=[
         'vod/type'=>11,'vod/show'=>12,'vod/search'=>13,'vod/detail'=>14,'vod/play'=>15,'vod/down'=>16,'vod/role'=>17,'vod/plot'=>18,
         'art/type'=>21,'art/show'=>22,'art/search'=>23,'art/detail'=>24,
+        'manga/type'=>121,'manga/show'=>122,'manga/search'=>123,'manga/detail'=>124,
         'topic/search'=>33,'topic/detail'=>34,
         'actor/type'=>81,'actor/show'=>82,'actor/search'=>83,'actor/detail'=>84,
         'role/show'=>92,'role/search'=>93,'role/detail'=>94,
@@ -1468,6 +1482,44 @@ function mac_play_list_one($url_one, $from_one, $server_one=''){
     return $url_list;
 }
 
+function mac_manga_list($manga_play_from,$manga_play_url,$manga_play_server,$manga_play_note)
+{
+    $manga_play_from_list = [];
+    $manga_play_url_list = [];
+    $manga_play_server_list = [];
+    $manga_play_note_list = [];
+
+    if(!empty($manga_play_from)) {
+        $manga_play_from_list = explode('$$$', $manga_play_from);
+    }
+    if(!empty($manga_play_url)) {
+        $manga_play_url_list = explode('$$$', $manga_play_url);
+    }
+    if(!empty($manga_play_server)) {
+        $manga_play_server_list = explode('$$$', $manga_play_server);
+    }
+    if(!empty($manga_play_note)) {
+        $manga_play_note_list = explode('$$$', $manga_play_note);
+    }
+
+    $res_list = [];
+    foreach($manga_play_from_list as $k=>$v){
+        $server = (string)$manga_play_server_list[$k];
+        $urls = mac_play_list_one($manga_play_url_list[$k],$v);
+
+        $res_list[$k + 1] = [
+            'sid' => $k + 1,
+            'from' => $v,
+            'url' => $manga_play_url_list[$k],
+            'server' => $server,
+            'note' => $manga_play_note_list[$k],
+            'url_count' => count($urls),
+            'urls' => $urls,
+        ];
+    }
+    return $res_list;
+}
+
 function mac_filter_words($p)
 {
     $config = config('maccms.app');
@@ -1712,24 +1764,25 @@ function mac_alphaID($in, $to_num=false, $pad_up=false, $passKey='')
     }
     $base = strlen($key);
     if ($to_num) {
-        $in = strrev($in);
         $out = 0;
-        $len = strlen($in) - 1;
-        for ($t = 0; $t <= $len; $t++) {
-            $bcpow = bcpow($base, $len - $t);
-            $out = $out + strpos($key, substr($in, $t, 1)) * $bcpow;
+        $len = strlen($in);
+        for ($t = 0; $t < $len; $t++) {
+            $char = substr($in, $t, 1);
+            $pos = strpos($key, $char);
+            if ($pos === false) {
+                $pos = 0;
+            }
+            $out = $out * $base + $pos;
         }
         if (is_numeric($pad_up)) {
-            $pad_up--;
-            if ($pad_up > 0) {
-                $out -= pow($base, $pad_up);
+            if ($pad_up > 1) {
+                $out -= pow($base, $pad_up - 1);
             }
         }
     } else {
         if (is_numeric($pad_up)) {
-            $pad_up--;
-            if ($pad_up > 0) {
-                $in += pow($base, $pad_up);
+            if ($pad_up > 1) {
+                $in += pow($base, $pad_up - 1);
             }
         }
         $out = "";
@@ -1760,6 +1813,10 @@ function mac_url($model,$param=[],$info=[])
     ksort($param); 
 
     $config = $GLOBALS['config'];
+    
+    $is_static_mode = isset($GLOBALS['ismake']) && $GLOBALS['ismake'] == '1';
+    
+    // 静态生成模式标记（用于后续URL处理）
     $replace_from = ['{id}','{en}','{page}','{type_id}','{type_en}','{type_pid}','{type_pen}','{md5}','{year}','{month}','{day}','{sid}','{nid}'];
     $replace_to = [];
     $page_sp = $config['path']['page_sp'];
@@ -2438,6 +2495,20 @@ function mac_url($model,$param=[],$info=[])
         }
     }
 
+    // 在静态生成模式下，对生成的URL进行后处理，去掉admin/index前缀
+    if($is_static_mode && !empty($url)) {
+        if(strpos($url, '/index.php/') === 0) {
+            $url = preg_replace('/\/index\.php\/[^\/]+\.php\/admin\-/', '/index.php/', $url);
+            $url = str_replace('/admin-', '/', $url);
+        }
+        if(strpos($url, 'admin-') !== false) {
+            $url = str_replace('admin-', '', $url);
+        }
+        if(strpos($url, 'index-') !== false) {
+            $url = str_replace('index-', '', $url);
+        }
+    }
+
     return $url;
 }
 function mac_url_page($url,$num)
@@ -2578,6 +2649,10 @@ function mac_url_vod_index($param=[])
 function mac_url_vod_detail($info)
 {
     return mac_url('vod/detail',[],$info);
+}
+function mac_url_manga_detail($info)
+{
+    return mac_url('manga/detail',[],$info);
 }
 function mac_url_vod_search($param)
 {
@@ -2801,16 +2876,20 @@ function mac_data_count($tid=0,$range='all',$flag='vod')
     return intval($data[$key]);
 }
 
-function mac_get_popedom_filter($group_type,$type_list=[])
+function mac_get_popedom_filter($group_type_list, $type_list = [])
 {
-    if(empty($type_list)){
+    if (empty($type_list)) {
         $type_list = model('Type')->getCache('type_list');
     }
     $type_keys = array_keys($type_list);
-    $group_type = trim($group_type,',');
-    $group_keys = explode(',',$group_type);
+    $group_type_list = array_map('trim', explode(',', trim($group_type_list, ',')));
+    $group_keys = [];
+    foreach ($group_type_list as $group_type) {
+        $group_keys = array_merge($group_keys, explode(',', $group_type));
+    }
+    $group_keys = get_array_unique_id_list($group_keys);
     $cha_keys = array_diff($type_keys, $group_keys);
-    return implode(',',$cha_keys);
+    return implode(',', $cha_keys);
 }
 
 function reset_html_filename($htmlfile)
@@ -3012,5 +3091,4 @@ if (!function_exists('copydirs')) {
         }
     }
 }
-
 
